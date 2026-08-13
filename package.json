@@ -1,0 +1,30 @@
+{
+  "name": "claude-code-collaborator",
+  "version": "0.3.0",
+  "description": "Team collaboration layer for Claude Code — git-native shared team memory, live presence, and session handoff, distilled automatically from every session.",
+  "type": "module",
+  "bin": {
+    "ccc": "bin/ccc.mjs"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "server",
+    "templates",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node test/run-tests.mjs"
+  },
+  "keywords": [
+    "claude-code",
+    "collaboration",
+    "team-memory",
+    "hooks",
+    "ai-agents"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,7 @@
+node_modules/
+*.log
+.claude/team/.distill.log
+.claude/team/.distill.lock
+.claude/team/.presence-down
+.claude/team/.handoff-pending.json
+.claude/scheduled_tasks.lock
