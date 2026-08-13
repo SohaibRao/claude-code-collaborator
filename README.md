@@ -51,6 +51,7 @@ Then point the repo at it in `.claude/team/config.json`:
 
 What the team gets:
 
+- **Web dashboard** — open the server URL in a browser: live sessions (who, what task, which files) and the handoff inbox, refreshing every 5 seconds. The page is static; its data calls carry the token you enter.
 - **Session start** — a `<team-presence>` block: who is active, their current task, their recent files.
 - **Edit-collision warnings** — a `PostToolUse` hook publishes each file touch and, in the same round trip, learns whether another developer's session touched that file in the last 30 minutes. If so, the agent receives an advisory heads-up. Warn, don't block.
 - **MCP tools** (`team-context` server, registered by `ccc init`): `search_team_memory` (works even without presence), `get_team_activity`, `check_file_activity`.
@@ -114,7 +115,7 @@ npm test   # zero-dependency smoke suite; uses --mock, makes no Claude calls
 
 ## Status & roadmap
 
-**Phases 1 (shared team memory), 2 (presence & coordination), and 3 (session handoff) are implemented.** The team dashboard with shared live sessions (Phase 4) follows. See [DESIGN.md](DESIGN.md) for the full architecture and the research on why nothing built into Claude Code covers this today.
+**Phases 1 (shared team memory), 2 (presence & coordination), 3 (session handoff), and the Phase 4 team dashboard are implemented.** Shared live sessions (multiple humans steering one server-hosted agent via the Agent SDK) remain future work. See [DESIGN.md](DESIGN.md) for the full architecture and the research on why nothing built into Claude Code covers this today.
 
 ## License
 

@@ -14,6 +14,7 @@
 //   GET  /handoffs       ?repo=  → bundle metadata list (newest first)
 //   GET  /handoffs/<id>  → full bundle
 //   GET  /healthz
+//   GET  /               team dashboard (static page; its data calls use the token)
 //
 // EVENT TYPES: session_start | session_end | file_touch | task
 // Common fields: sessionId, user, repo, ts (server time wins). file_touch: path. task: task.
@@ -34,6 +35,143 @@ const MAX_FILES_PER_SESSION = 500;
 const MAX_HANDOFFS = 500;
 const HANDOFF_TTL_MS = 14 * 24 * 60 * 60 * 1000; // handoffs expire after 14 days
 const HANDOFF_ID_RE = /^[A-Za-z0-9-]{4,64}$/;
+
+// Embedded dashboard. Kept inside this file so the whole server deploys as one
+// file (the Dockerfile copies only sync-server.mjs). The page itself is public;
+// every data call it makes carries the Bearer token the viewer enters.
+// NOTE for editors: the client script below deliberately avoids backticks and
+// "${" so it can live inside this template literal.
+const DASHBOARD_HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ccc team dashboard</title>
+<style>
+  :root { --bg:#14161c; --panel:#1c1f28; --line:#2c3040; --ink:#e6e8ee; --mut:#8b93a7; --blue:#7d96f0; --copper:#e09258; --ok:#6fce8f; --bad:#e07a7a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 ui-monospace,Consolas,monospace; }
+  header { display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  header h1 { font-size:15px; margin:0; letter-spacing:.06em; }
+  header h1 b { color:var(--blue); }
+  #dot { width:9px; height:9px; border-radius:50%; background:var(--mut); }
+  #dot.ok { background:var(--ok); } #dot.bad { background:var(--bad); }
+  #state { color:var(--mut); font-size:12px; }
+  #tok { margin-left:auto; display:flex; gap:6px; }
+  #tok input { background:var(--panel); border:1px solid var(--line); color:var(--ink); padding:4px 8px; border-radius:6px; font:inherit; width:180px; }
+  #tok button { background:var(--blue); border:0; color:#10131b; padding:4px 12px; border-radius:6px; font:inherit; cursor:pointer; font-weight:700; }
+  main { max-width:900px; margin:0 auto; padding:20px; display:grid; gap:24px; }
+  h2 { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--mut); margin:0 0 10px; }
+  h2 .n { color:var(--copper); }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin-bottom:8px; }
+  .card .who { color:var(--blue); font-weight:700; }
+  .card .task { color:var(--ink); }
+  .card .meta { color:var(--mut); font-size:12px; margin-top:4px; overflow-wrap:anywhere; }
+  .card .repo { color:var(--copper); }
+  .empty { color:var(--mut); padding:8px 2px; }
+  .hf .who { color:var(--copper); }
+  .hf code { background:var(--bg); padding:1px 6px; border-radius:5px; }
+</style>
+</head>
+<body>
+<header>
+  <div id="dot"></div>
+  <h1><b>ccc</b> team dashboard</h1>
+  <span id="state">connecting…</span>
+  <div id="tok"><input id="token" type="password" placeholder="server token"><button id="save">connect</button></div>
+</header>
+<main>
+  <section><h2>Active sessions <span class="n" id="nsess"></span></h2><div id="sessions"></div></section>
+  <section><h2>Handoff inbox <span class="n" id="nhf"></span></h2><div id="handoffs"></div></section>
+</main>
+<script>
+(function () {
+  var tokenEl = document.getElementById('token');
+  var dot = document.getElementById('dot');
+  var state = document.getElementById('state');
+  tokenEl.value = localStorage.getItem('ccc-token') || '';
+  document.getElementById('save').onclick = function () {
+    localStorage.setItem('ccc-token', tokenEl.value);
+    tick();
+  };
+  function hdrs() {
+    var t = localStorage.getItem('ccc-token') || '';
+    return t ? { authorization: 'Bearer ' + t } : {};
+  }
+  function age(s) {
+    if (s < 90) return s + 's';
+    if (s < 5400) return Math.round(s / 60) + 'm';
+    if (s < 129600) return Math.round(s / 3600) + 'h';
+    return Math.round(s / 86400) + 'd';
+  }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function renderSessions(list) {
+    var box = document.getElementById('sessions');
+    box.replaceChildren();
+    document.getElementById('nsess').textContent = '· ' + list.length;
+    if (!list.length) { box.append(el('div', 'empty', 'No active sessions.')); return; }
+    list.forEach(function (s) {
+      var c = el('div', 'card');
+      var top = el('div');
+      top.append(el('span', 'who', s.user));
+      top.append(el('span', 'repo', '  ' + (s.repo || '')));
+      if (s.task) top.append(el('span', 'task', ' — ' + s.task));
+      c.append(top);
+      var files = (s.recentFiles || []).map(function (f) { return f.path; }).join(', ');
+      c.append(el('div', 'meta', 'idle ' + age(s.idleSeconds) + (files ? ' · recent: ' + files : '')));
+      box.append(c);
+    });
+  }
+  function renderHandoffs(list) {
+    var box = document.getElementById('handoffs');
+    box.replaceChildren();
+    document.getElementById('nhf').textContent = '· ' + list.length;
+    if (!list.length) { box.append(el('div', 'empty', 'No handoffs waiting.')); return; }
+    list.forEach(function (h) {
+      var c = el('div', 'card hf');
+      var top = el('div');
+      top.append(el('span', 'who', h.from));
+      top.append(el('span', 'repo', '  ' + (h.repo || '')));
+      top.append(el('span', 'task', ' — ' + h.title));
+      c.append(top);
+      var meta = el('div', 'meta', age(Math.round((Date.now() - h.createdAt) / 1000)) + ' ago · resume with ');
+      var code = document.createElement('code');
+      code.textContent = 'ccc resume ' + h.id;
+      meta.append(code);
+      c.append(meta);
+      box.append(c);
+    });
+  }
+  async function tick() {
+    try {
+      var a = await fetch('/activity', { headers: hdrs() });
+      if (a.status === 401) {
+        dot.className = 'bad';
+        state.textContent = 'unauthorized — enter the server token';
+        return;
+      }
+      var act = await a.json();
+      var hf = await (await fetch('/handoffs', { headers: hdrs() })).json();
+      renderSessions(act.sessions || []);
+      renderHandoffs(hf.handoffs || []);
+      dot.className = 'ok';
+      state.textContent = 'live · refreshes every 5s';
+    } catch (e) {
+      dot.className = 'bad';
+      state.textContent = 'server unreachable';
+    }
+  }
+  setInterval(tick, 5000);
+  tick();
+})();
+</script>
+</body>
+</html>`;
 
 export function createSyncServer(opts = {}) {
   const token = opts.token ?? process.env.CCC_SYNC_TOKEN ?? '';
@@ -186,6 +324,10 @@ export function createSyncServer(opts = {}) {
     try {
       const url = new URL(req.url, 'http://localhost');
       if (url.pathname === '/healthz') return send(200, { ok: true, sessions: sessions.size });
+      if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
+        res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+        return res.end(DASHBOARD_HTML);
+      }
       if (token) {
         const auth = req.headers['authorization'] || '';
         if (auth !== `Bearer ${token}`) return send(401, { error: 'unauthorized' });

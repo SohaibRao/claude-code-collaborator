@@ -241,6 +241,13 @@ const authed = { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/
   const noAuth = await fetch(`${base}/events`, { method: 'POST', body: '{}' });
   check('server rejects requests without token', () => assert.equal(noAuth.status, 401));
 
+  const page = await fetch(`${base}/`);
+  const html = await page.text();
+  check('dashboard page is served without auth (data calls stay authed)', () => {
+    assert.equal(page.status, 200);
+    assert.match(html, /<title>ccc team dashboard<\/title>/);
+  });
+
   const r = await fetch(`${base}/events`, {
     method: 'POST',
     headers: authed,
