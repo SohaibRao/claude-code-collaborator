@@ -1,0 +1,14 @@
+{
+  "model": "haiku",
+  "claudeBin": "",
+  "maxIndexChars": 8000,
+  "maxTranscriptChars": 120000,
+  "minTranscriptBytes": 2000,
+  "distillTimeoutMs": 300000,
+  "redact": true,
+  "presence": {
+    "url": "",
+    "token": "",
+    "user": ""
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "team-context": {
+      "command": "node",
+      "args": [
+        ".claude/team/hooks/mcp-server.mjs"
+      ]
+    }
+  }
+}
