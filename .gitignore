@@ -5,3 +5,4 @@ node_modules/
 .claude/team/.presence-down
 .claude/team/.handoff-pending.json
 .claude/scheduled_tasks.lock
+.claude/settings.local.json
