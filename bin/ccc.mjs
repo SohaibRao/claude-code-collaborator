@@ -8,7 +8,7 @@ import { findProjectRoot, teamDir } from '../lib/util.mjs';
 import { init } from '../lib/init.mjs';
 import { status } from '../lib/status.mjs';
 
-const VERSION = '0.4.0';
+const VERSION = '0.5.0';
 const PKG_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const HELP = `ccc — Claude Code Collaborator v${VERSION}
@@ -33,6 +33,11 @@ Usage:
       --port <n>             port to listen on (default 7377)
       --token <secret>       require Bearer token auth (recommended)
       --state <file>         JSON snapshot file so restarts keep state
+  ccc live [options]       Run the shared live-session server (ccc-live companion)
+      --port <n>             port to listen on (default 7378)
+      --token <secret>       require Bearer token auth (recommended)
+      --model <m>            model for room agents
+      --mock                 mock agent — no SDK or API calls (demos/tests)
   ccc version              Print version
 
 After init, commit .claude/ and .mcp.json so your team gets everything on git pull.
@@ -147,6 +152,22 @@ switch (cmd) {
     const r = spawnSync(process.execPath, [path.join(PKG_ROOT, 'server', 'sync-server.mjs'), ...rest], {
       stdio: 'inherit',
     });
+    process.exit(r.status ?? 0);
+    break;
+  }
+
+  case 'live': {
+    const script = path.join(PKG_ROOT, 'live', 'live-server.mjs');
+    if (!fs.existsSync(script)) {
+      console.error(
+        'ccc live: the ccc-live companion package is not present alongside this install.\n' +
+          'Clone the ccc repository (live/ ships there) or install ccc-live and run `ccc-live` directly.',
+      );
+      process.exit(1);
+    }
+    const argv = [...rest];
+    if (!argv.includes('--cwd')) argv.push('--cwd', root);
+    const r = spawnSync(process.execPath, [script, ...argv], { stdio: 'inherit' });
     process.exit(r.status ?? 0);
     break;
   }

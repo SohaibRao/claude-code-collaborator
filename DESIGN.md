@@ -102,7 +102,7 @@ Advisory only. Nothing blocks; everything informs — the agent (and human) deci
 | **1 — Shared memory (MVP)** | `ccc init`, distiller hook, session-start injection, `.claude/team/` format | None (git only) | ✅ shipped v0.1.0 (2026-08-12) |
 | **2 — Presence** | Sync server, activity MCP tools, edit-collision warnings | One small server | ✅ shipped v0.2.0 (2026-08-13) |
 | **3 — Handoff** | Bundle format, `handoff`/`resume`, handoff inbox | Same server (or git-only) | ✅ shipped v0.3.0 (2026-08-13) |
-| **4 — Dashboard & live sessions** | Web dashboard; shared server-hosted agent sessions | Same server + Agent SDK runtime | dashboard ✅ shipped v0.4.0 · live sessions planned |
+| **4 — Dashboard & live sessions** | Web dashboard; shared server-hosted agent sessions | Same server + Agent SDK runtime | ✅ shipped — dashboard v0.4.0, live sessions v0.5.0 (`ccc-live`) |
 
 Phase 1 alone already closes the biggest gap (knowledge silos) with zero infrastructure — the repo *is* the database.
 

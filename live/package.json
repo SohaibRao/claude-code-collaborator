@@ -1,0 +1,16 @@
+{
+  "name": "ccc-live",
+  "version": "0.1.0",
+  "description": "Shared live sessions for Claude Code Collaborator — one server-hosted agent, multiple humans steering it together.",
+  "type": "module",
+  "bin": {
+    "ccc-live": "live-server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.77"
+  },
+  "license": "MIT"
+}

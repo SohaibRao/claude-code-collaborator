@@ -9,6 +9,7 @@ Claude Code is single-player: everything your Claude learns during a session —
 - **Team memory** — when a session ends, a distiller extracts the durable knowledge into `.claude/team/`, where it is reviewed and committed like any other change. When any teammate starts a session, that shared memory is injected automatically. Knowledge ships in the same PR as the code it explains.
 - **Presence** (optional, needs one small server) — every teammate's session announces itself and the files it touches. Sessions see who else is working, agents get an advisory warning the moment they edit a file another developer's agent is already in, and MCP tools let agents query team activity on demand.
 - **Handoff** — package an in-flight task (state summary, next steps, todo list, working diff) into a bundle a teammate resumes with full context, across desks, timezones, or shifts.
+- **Live sessions** ([ccc-live](live/README.md) companion package) — one server-hosted agent, multiple humans watching the same transcript and steering it together in the browser.
 
 ## Quickstart
 
@@ -85,6 +86,7 @@ Bundles travel two ways: committed in `.claude/team/handoffs/` (git-native, zero
 | `ccc resume <id>` | Stage a handoff for the next session in this project (`--print` to just view it) |
 | `ccc inbox` | List handoffs available for this project (git + server) |
 | `ccc serve` | Run the team sync server (`--port`, `--token`, `--state`) |
+| `ccc live` | Run the shared live-session server (`--port`, `--token`, `--model`, `--mock`) |
 
 ## Configuration — `.claude/team/config.json`
 
@@ -115,7 +117,7 @@ npm test   # zero-dependency smoke suite; uses --mock, makes no Claude calls
 
 ## Status & roadmap
 
-**Phases 1 (shared team memory), 2 (presence & coordination), 3 (session handoff), and the Phase 4 team dashboard are implemented.** Shared live sessions (multiple humans steering one server-hosted agent via the Agent SDK) remain future work. See [DESIGN.md](DESIGN.md) for the full architecture and the research on why nothing built into Claude Code covers this today.
+**All four designed phases are implemented**: shared team memory, presence & coordination, session handoff, the team dashboard, and shared live sessions (as the [ccc-live](live/README.md) companion package, keeping the core zero-dependency). See [DESIGN.md](DESIGN.md) for the full architecture and the research on why nothing built into Claude Code covers this today.
 
 ## License
 

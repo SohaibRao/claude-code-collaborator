@@ -443,7 +443,92 @@ const authed = { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/
   });
 }
 
-// ---- 17. circuit breaker: unreachable server never breaks a session ----
+// ---- 17. live sessions (ccc-live companion, mock agent) ----
+{
+  const liveSrv = spawn(
+    process.execPath,
+    [path.join(pkgRoot, 'live', 'live-server.mjs'), '--mock', '--port', '0', '--token', 'livetok'],
+    { stdio: ['ignore', 'pipe', 'pipe'] },
+  );
+  const lport = await new Promise((resolve, reject) => {
+    const to = setTimeout(() => reject(new Error('live server did not start within 10s')), 10000);
+    let buf = '';
+    liveSrv.stdout.on('data', (d) => {
+      buf += d;
+      const m = buf.match(/listening on :(\d+)/);
+      if (m) {
+        clearTimeout(to);
+        resolve(Number(m[1]));
+      }
+    });
+    liveSrv.on('exit', () => reject(new Error('live server exited early')));
+  });
+  const lbase = `http://127.0.0.1:${lport}`;
+  const lauth = { authorization: 'Bearer livetok', 'content-type': 'application/json' };
+  const waitFor = async (fn, ms = 3000) => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < ms) {
+      if (await fn()) return true;
+      await new Promise((r) => setTimeout(r, 60));
+    }
+    return false;
+  };
+
+  const noAuth = await fetch(`${lbase}/rooms`);
+  check('live server rejects requests without token', () => assert.equal(noAuth.status, 401));
+
+  const ui = await fetch(`${lbase}/`);
+  const uiHtml = await ui.text();
+  check('live UI page is served', () => {
+    assert.equal(ui.status, 200);
+    assert.match(uiHtml, /<title>ccc live sessions<\/title>/);
+  });
+
+  const created = await (
+    await fetch(`${lbase}/rooms`, { method: 'POST', headers: lauth, body: JSON.stringify({ title: 'pair debugging' }) })
+  ).json();
+  check('room created with an id', () => assert.match(created.id, /^rm-/));
+  const rid = created.id;
+
+  await fetch(`${lbase}/rooms/${rid}/messages`, {
+    method: 'POST',
+    headers: lauth,
+    body: JSON.stringify({ from: 'alice', text: 'fix the auth bug' }),
+  });
+  await fetch(`${lbase}/rooms/${rid}/messages`, {
+    method: 'POST',
+    headers: lauth,
+    body: JSON.stringify({ from: 'bob', text: 'and add a test for it' }),
+  });
+  const bothAnswered = await waitFor(async () => {
+    const info = await (await fetch(`${lbase}/rooms/${rid}`, { headers: lauth })).json();
+    const texts = info.events.filter((e) => e.type === 'assistant').map((e) => e.text);
+    return texts.some((t) => t.includes('alice')) && texts.some((t) => t.includes('bob'));
+  });
+  check('two humans steer one agent: both messages answered in one room', () => assert.ok(bothAnswered));
+
+  const stream = await fetch(`${lbase}/rooms/${rid}/stream?token=livetok`);
+  const reader = stream.body.getReader();
+  const chunk = new TextDecoder().decode((await reader.read()).value);
+  await reader.cancel();
+  check('SSE stream replays the transcript buffer', () => {
+    assert.equal(stream.status, 200);
+    assert.match(chunk, /retry: 3000/);
+    assert.match(chunk, /fix the auth bug/);
+  });
+
+  await fetch(`${lbase}/rooms/${rid}/end`, { method: 'POST', headers: lauth });
+  const afterEnd = await fetch(`${lbase}/rooms/${rid}/messages`, {
+    method: 'POST',
+    headers: lauth,
+    body: JSON.stringify({ from: 'carol', text: 'too late' }),
+  });
+  check('ended room refuses new messages', () => assert.equal(afterEnd.status, 409));
+
+  liveSrv.kill();
+}
+
+// ---- 18. circuit breaker: unreachable server never breaks a session ----
 {
   const cfgPath = path.join(team, 'config.json');
   const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
