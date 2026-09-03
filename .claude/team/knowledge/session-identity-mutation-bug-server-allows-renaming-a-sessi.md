@@ -1,7 +1,7 @@
 ---
 title: Session identity mutation bug: server allows renaming a session owner
-date: 2026-08-13
-author: dell
+date: 2026-08-24
+author: Realux Team
 paths: ["server/sync-server.mjs"]
 ---
 

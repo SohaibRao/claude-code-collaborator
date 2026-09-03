@@ -1,7 +1,7 @@
 ---
 title: Distiller uses a lock file to prevent concurrent runs
-date: 2026-08-13
-author: dell
+date: 2026-08-24
+author: Realux Team
 paths: ["templates/session-end.mjs","templates/distill.mjs"]
 ---
 

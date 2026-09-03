@@ -1,7 +1,7 @@
 ---
 title: Secret redaction must happen before storage, not just before transmission
-date: 2026-08-13
-author: dell
+date: 2026-08-24
+author: Realux Team
 paths: ["templates/common.mjs","templates/distill.mjs","templates/handoff.mjs"]
 ---
 

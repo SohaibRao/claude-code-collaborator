@@ -1,7 +1,7 @@
 ---
 title: Process deadlock in test harness when sync server runs in-process
-date: 2026-08-13
-author: dell
+date: 2026-08-24
+author: Realux Team
 paths: ["test/run-tests.mjs","server/sync-server.mjs"]
 ---
 
