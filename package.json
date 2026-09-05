@@ -1,6 +1,6 @@
 {
   "name": "claude-code-collaborator",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Team collaboration layer for Claude Code — git-native shared team memory, live presence, and session handoff, distilled automatically from every session.",
   "type": "module",
   "bin": {

@@ -205,9 +205,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const r = run([ccc, 'status']);
   check('status reports entries and hooks', () => {
     assert.equal(r.status, 0);
-    assert.match(r.stdout, /decisions: 2/); // one from step 4, one from step 7
+    // Step 7 re-distilled the same session: its duplicate decision must be
+    // skipped (title-slug dedup), leaving only step 4's original.
+    assert.match(r.stdout, /decisions: 1/);
     assert.match(r.stdout, /SessionStart ok/);
     assert.match(r.stdout, /SessionEnd ok/);
+  });
+  check('re-distilling never duplicates a decision', () => {
+    const files = fs.readdirSync(path.join(team, 'decisions')).filter((f) => f.endsWith('.md'));
+    assert.equal(files.length, 1, `expected 1 decision file, got: ${files.join(', ')}`);
   });
 }
 

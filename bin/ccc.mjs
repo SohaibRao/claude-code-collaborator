@@ -8,7 +8,7 @@ import { findProjectRoot, teamDir } from '../lib/util.mjs';
 import { init } from '../lib/init.mjs';
 import { status } from '../lib/status.mjs';
 
-const VERSION = '0.5.0';
+const VERSION = '0.5.1';
 const PKG_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const HELP = `ccc — Claude Code Collaborator v${VERSION}
