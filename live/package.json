@@ -6,11 +6,32 @@
   "bin": {
     "ccc-live": "live-server.mjs"
   },
+  "files": [
+    "live-server.mjs",
+    "README.md"
+  ],
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.77"
+  },
+  "keywords": [
+    "claude-code",
+    "claude",
+    "collaboration",
+    "live-session",
+    "multiplayer",
+    "agent-sdk"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SohaibRao/claude-code-collaborator.git",
+    "directory": "live"
+  },
+  "homepage": "https://github.com/SohaibRao/claude-code-collaborator/tree/main/live#readme",
+  "bugs": {
+    "url": "https://github.com/SohaibRao/claude-code-collaborator/issues"
   },
   "license": "MIT"
 }

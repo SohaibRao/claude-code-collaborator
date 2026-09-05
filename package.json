@@ -11,20 +11,34 @@
     "lib",
     "server",
     "templates",
+    "Dockerfile",
     "README.md"
   ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test/run-tests.mjs"
+    "test": "node test/run-tests.mjs",
+    "prepublishOnly": "node test/run-tests.mjs"
   },
   "keywords": [
     "claude-code",
+    "claude",
     "collaboration",
     "team-memory",
+    "presence",
+    "handoff",
     "hooks",
+    "mcp",
     "ai-agents"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SohaibRao/claude-code-collaborator.git"
+  },
+  "homepage": "https://github.com/SohaibRao/claude-code-collaborator#readme",
+  "bugs": {
+    "url": "https://github.com/SohaibRao/claude-code-collaborator/issues"
+  },
   "license": "MIT"
 }
