@@ -7,7 +7,7 @@ status: accepted
 paths: ["bin/ccc.mjs","templates/"]
 ---
 
-**What:** All Phase 1–3 logic (session-start.mjs, session-end.mjs, distill.mjs, post-tool.mjs, handoff.mjs, common.mjs) ships as plain ESM modules; `ccc` CLI is a single .mjs file. No `package.json` in the vendored tree.
+**What:** All Phase 1–3 logic (session-start.mjs, session-end.mjs, distill.mjs, post-tool.mjs, handoff.mjs, common.mjs) ships as plain ESM modules; `ccc` CLI is a single .mjs file. No `package.json` in the vendored tree. The one real dependency (Claude Agent SDK, for shared live sessions) is isolated in the separate `live/` companion package so the core stays zero-dependency.
 
 **Why:** Minimizes supply-chain risk; teammates onboard with `node bin/ccc.mjs init` and nothing else. Hooks run with the user's auth directly (no separate API tokens to manage). Simplifies debugging (full control, no transitive deps).
 

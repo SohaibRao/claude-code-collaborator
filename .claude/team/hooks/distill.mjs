@@ -50,8 +50,27 @@ const cfg = {
 };
 
 // ---------- distillation prompt ----------
-function buildPrompt(doc) {
-  return `You are the memory distiller for a software team. Below is a transcript of one developer's Claude Code session on this project. Extract ONLY durable knowledge that would help a *different* developer's coding agent working on the same repository.
+// Titles already in team memory — fed to the model so re-distilling the same
+// themes (another session, another machine) doesn't re-record known decisions.
+function existingTitles() {
+  const titles = [];
+  for (const sub of ['decisions', 'knowledge']) {
+    try {
+      for (const f of fs.readdirSync(path.join(team, sub))) {
+        if (!f.endsWith('.md')) continue;
+        const m = fs.readFileSync(path.join(team, sub, f), 'utf8').match(/^title:\s*(.+)$/m);
+        if (m) titles.push(m[1].trim());
+      }
+    } catch {}
+  }
+  return titles;
+}
+
+function buildPrompt(doc, known) {
+  const knownBlock = known.length
+    ? `\nALREADY RECORDED for this team (do NOT re-record these or trivial rephrasings of them; include one only if this session materially changed or reversed it, and say so in its body):\n${known.map((t) => `- ${t}`).join('\n')}\n`
+    : '';
+  return `You are the memory distiller for a software team. Below is a transcript of one developer's Claude Code session on this project. Extract ONLY durable knowledge that would help a *different* developer's coding agent working on the same repository.${knownBlock}
 
 Return STRICT JSON (no markdown fences, no commentary) with this exact shape:
 {
@@ -80,13 +99,17 @@ function parseResult(raw) {
 }
 
 // ---------- writing entries ----------
-// Decisions are immutable records — never overwritten, suffixed if the slug collides.
+// Decisions are immutable records: if any dated file already carries this title
+// slug, the decision is already on record and is never written again (mechanical
+// backstop for the prompt-level dedup above). Returns null when skipped.
 function writeDecision(d, meta) {
   const dir = path.join(team, 'decisions');
-  const slug = `${today()}-${slugify(d.title)}`;
-  let file = path.join(dir, slug + '.md');
-  let n = 2;
-  while (fs.existsSync(file)) file = path.join(dir, `${slug}-${n++}.md`);
+  const slug = slugify(d.title);
+  try {
+    const dupe = fs.readdirSync(dir).some((f) => new RegExp(`^\\d{4}-\\d{2}-\\d{2}-${slug}(-\\d+)?\\.md$`).test(f));
+    if (dupe) return null;
+  } catch {}
+  const file = path.join(dir, `${today()}-${slug}.md`);
   const body = [
     '---',
     `title: ${d.title}`,
@@ -212,7 +235,7 @@ async function main() {
       knowledge: [{ title: 'Mock knowledge', body: 'The build requires Node 18+.', paths: [] }],
     };
   } else {
-    result = parseResult(await callClaude(buildPrompt(doc), cfg));
+    result = parseResult(await callClaude(buildPrompt(doc, existingTitles()), cfg));
   }
 
   if (cfg.redact) result = redactDeep(result);
@@ -223,12 +246,18 @@ async function main() {
   }
 
   const written = [];
-  for (const d of result.decisions) written.push(writeDecision(d, meta));
+  let skipped = 0;
+  for (const d of result.decisions) {
+    const w = writeDecision(d, meta);
+    if (w) written.push(w);
+    else skipped++;
+  }
+  const decisionCount = written.length;
   for (const k of result.knowledge) written.push(writeKnowledge(k, meta));
   appendJournal(result.summary, meta, written);
   regenIndex();
   console.log(
-    `ccc: distilled session ${meta.session} — ${result.decisions.length} decision(s), ${result.knowledge.length} knowledge entr(y/ies). Review with \`git diff .claude/team\` and commit.`,
+    `ccc: distilled session ${meta.session} — ${decisionCount} decision(s)${skipped ? ` (${skipped} already recorded, skipped)` : ''}, ${result.knowledge.length} knowledge entr(y/ies). Review with \`git diff .claude/team\` and commit.`,
   );
 }
 
